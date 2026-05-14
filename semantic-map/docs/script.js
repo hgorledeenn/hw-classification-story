@@ -407,7 +407,7 @@ function isPointActive(d) {
            filterMatch &&
            (searchTerm === '' ||
             d.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            d.text.toLowerCase().includes(searchTerm.toLowerCase()));
+            (d.author || d.source || '').toLowerCase().includes(searchTerm.toLowerCase()));
 }
 
 // New mouse interaction handlers
@@ -762,7 +762,7 @@ function handleMouseOver(event, d) {
                     d.date <= dateSlider.get()[1] &&
                     (selectedSources.length === 0 || selectedSources.includes(d.source)) &&
                     (searchTerm === '' || d.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                     d.text.toLowerCase().includes(searchTerm.toLowerCase()));
+                     (d.author || d.source || '').toLowerCase().includes(searchTerm.toLowerCase()));
 
     if (!isActive) return;
 
@@ -803,7 +803,7 @@ function handleMouseOut() {
                     (selectedSources.length === 0 || selectedSources.includes(d.source)) &&
                     (searchTerm === '' || 
                      d.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                     d.text.toLowerCase().includes(searchTerm.toLowerCase()));
+                     (d.author || d.source || '').toLowerCase().includes(searchTerm.toLowerCase()));
 
     dot.transition()
         .duration(150)
