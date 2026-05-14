@@ -25,6 +25,10 @@ let llmLabelMap = {}; // title → true/false
 // Dot size multiplier
 let dotSizeMultiplier = 1.0;
 
+// Per-group style overrides  { groupName -> { color, opacity, sizeMultiplier, borderEnabled, borderColor, borderWidth } }
+let groupStyles = {};
+let activePopupGroup = null;
+
 // Highlight style overrides (apply to active/highlighted points)
 let highlightColorOverride = null;  // null = use default color scale
 let highlightSizeMultiplier = 1.0;
@@ -336,7 +340,11 @@ function drawCanvas() {
     allData.forEach(d => {
         if (!isPointActive(d)) return; // Skip inactive points in second pass
 
-        const baseRadius = (hasAmountColumn ? sizeScale(d.amount) : 5) * dotSizeMultiplier * highlightSizeMultiplier;
+        const groupKey = coloringMode === 'cluster' ? d[clusterKey] : d.source;
+        const gs = groupStyles[groupKey];
+
+        const baseRadius = (hasAmountColumn ? sizeScale(d.amount) : 5) * dotSizeMultiplier *
+                           (gs ? gs.sizeMultiplier : highlightSizeMultiplier);
         const radius = baseRadius / currentTransform.k;
 
         ctx.beginPath();
@@ -348,12 +356,13 @@ function drawCanvas() {
             2 * Math.PI
         );
 
-        ctx.fillStyle = highlightColorOverride || getColor(d, true);
-        ctx.globalAlpha = highlightOpacity;
+        ctx.fillStyle = gs ? gs.color : (highlightColorOverride || getColor(d, true));
+        ctx.globalAlpha = gs ? gs.opacity : highlightOpacity;
 
-        if (d === hoveredPoint || highlightAlwaysBorder) {
-            ctx.strokeStyle = highlightBorderColor;
-            ctx.lineWidth = highlightBorderWidth / currentTransform.k;
+        const showBorder = d === hoveredPoint || (gs ? gs.borderEnabled : highlightAlwaysBorder);
+        if (showBorder) {
+            ctx.strokeStyle = gs ? gs.borderColor : highlightBorderColor;
+            ctx.lineWidth = (gs ? gs.borderWidth : highlightBorderWidth) / currentTransform.k;
             ctx.stroke();
         }
 
@@ -516,21 +525,33 @@ function setupFilterCombobox(options, getColor, selectedArray, onUpdate, initial
 
         const tag = document.createElement('span');
         tag.className = 'filter-tag';
+        tag.dataset.group = value;
         tag.style.backgroundColor = getColor(value);
-        tag.textContent = value;
+        tag.title = 'Click to customize style';
+        tag.style.cursor = 'pointer';
+
+        const labelEl = document.createElement('span');
+        labelEl.textContent = value;
+        tag.appendChild(labelEl);
 
         const remove = document.createElement('button');
         remove.className = 'filter-tag-remove';
         remove.textContent = '×';
-        remove.onclick = () => {
+        remove.onclick = (e) => {
+            e.stopPropagation();
             const idx = selectedArray.indexOf(value);
             if (idx !== -1) selectedArray.splice(idx, 1);
+            delete groupStyles[value];
+            if (activePopupGroup === value) hideGroupStylePopup();
             tag.remove();
             refreshDropdown(inputEl.value);
             triggerUpdate();
         };
         tag.appendChild(remove);
         tagsEl.appendChild(tag);
+
+        tag.onclick = () => showGroupStylePopup(value, tag);
+
         triggerUpdate();
     }
 
@@ -857,6 +878,137 @@ function setupDotSizeControls() {
         drawCanvas();
     });
 }
+
+function hideGroupStylePopup() {
+    const el = document.getElementById('group-style-popup');
+    if (el) el.remove();
+    activePopupGroup = null;
+}
+
+function showGroupStylePopup(groupName, anchorEl) {
+    // Toggle off if already open for this group
+    if (activePopupGroup === groupName) { hideGroupStylePopup(); return; }
+    hideGroupStylePopup();
+
+    // Init style entry if not yet customised
+    if (!groupStyles[groupName]) {
+        const autoColor = coloringMode === 'cluster'
+            ? clusterColorScale(groupName)
+            : colorScale(groupName);
+        groupStyles[groupName] = {
+            color: autoColor,
+            opacity: highlightOpacity,
+            sizeMultiplier: highlightSizeMultiplier,
+            borderEnabled: false,
+            borderColor: '#000000',
+            borderWidth: 1,
+        };
+    }
+    activePopupGroup = groupName;
+    const s = groupStyles[groupName];
+
+    const popup = document.createElement('div');
+    popup.id = 'group-style-popup';
+    popup.innerHTML = `
+        <div class="gsp-header">
+            <span class="gsp-title">${groupName}</span>
+            <button class="gsp-close" title="Close">×</button>
+        </div>
+        <div class="gsp-row">
+            <label>Color</label>
+            <input type="color" class="gsp-color" value="${s.color}">
+        </div>
+        <div class="gsp-row">
+            <label>Opacity</label>
+            <input type="range" class="gsp-opacity" min="0" max="100" value="${Math.round(s.opacity * 100)}" step="1">
+            <span class="gsp-val">${Math.round(s.opacity * 100)}%</span>
+        </div>
+        <div class="gsp-row">
+            <label>Size</label>
+            <input type="range" class="gsp-size" min="0.5" max="3" value="${s.sizeMultiplier}" step="0.1">
+            <span class="gsp-val">${s.sizeMultiplier.toFixed(1)}×</span>
+        </div>
+        <div class="gsp-row">
+            <label>Border</label>
+            <input type="checkbox" class="gsp-border-on" ${s.borderEnabled ? 'checked' : ''}>
+            <input type="color" class="gsp-border-color" value="${s.borderColor}" ${s.borderEnabled ? '' : 'disabled'}>
+            <input type="range" class="gsp-border-w" min="0.5" max="5" value="${s.borderWidth}" step="0.5" ${s.borderEnabled ? '' : 'disabled'}>
+            <span class="gsp-val">${s.borderWidth}px</span>
+        </div>
+        <button class="gsp-reset">Reset to default</button>
+    `;
+    document.body.appendChild(popup);
+
+    // Position below the tag, adjust if off-screen
+    const rect = anchorEl.getBoundingClientRect();
+    popup.style.left = rect.left + 'px';
+    popup.style.top  = (rect.bottom + 6) + 'px';
+    requestAnimationFrame(() => {
+        const pr = popup.getBoundingClientRect();
+        if (pr.right  > window.innerWidth)  popup.style.left = Math.max(0, window.innerWidth  - pr.width  - 8) + 'px';
+        if (pr.bottom > window.innerHeight) popup.style.top  = (rect.top - pr.height - 6) + 'px';
+    });
+
+    // Wire controls
+    const rows       = popup.querySelectorAll('.gsp-row');
+    const colorEl    = popup.querySelector('.gsp-color');
+    const opacityEl  = popup.querySelector('.gsp-opacity');
+    const opacityVal = rows[1].querySelector('.gsp-val');
+    const sizeEl     = popup.querySelector('.gsp-size');
+    const sizeVal    = rows[2].querySelector('.gsp-val');
+    const borderOn   = popup.querySelector('.gsp-border-on');
+    const borderCol  = popup.querySelector('.gsp-border-color');
+    const borderW    = popup.querySelector('.gsp-border-w');
+    const borderVal  = rows[3].querySelector('.gsp-val');
+
+    const update = () => {
+        groupStyles[groupName].color         = colorEl.value;
+        groupStyles[groupName].opacity       = +opacityEl.value / 100;
+        groupStyles[groupName].sizeMultiplier = +sizeEl.value;
+        groupStyles[groupName].borderEnabled = borderOn.checked;
+        groupStyles[groupName].borderColor   = borderCol.value;
+        groupStyles[groupName].borderWidth   = +borderW.value;
+        // Sync tag background to custom color
+        const tagEl = document.querySelector(`.filter-tag[data-group="${CSS.escape(groupName)}"]`);
+        if (tagEl) tagEl.style.backgroundColor = colorEl.value;
+        drawCanvas();
+    };
+
+    colorEl.addEventListener('input', update);
+    opacityEl.addEventListener('input', () => {
+        opacityVal.textContent = opacityEl.value + '%'; update();
+    });
+    sizeEl.addEventListener('input', () => {
+        sizeVal.textContent = (+sizeEl.value).toFixed(1) + '×'; update();
+    });
+    borderOn.addEventListener('change', () => {
+        borderCol.disabled = !borderOn.checked;
+        borderW.disabled   = !borderOn.checked;
+        update();
+    });
+    borderCol.addEventListener('input', update);
+    borderW.addEventListener('input', () => {
+        borderVal.textContent = borderW.value + 'px'; update();
+    });
+
+    popup.querySelector('.gsp-reset').addEventListener('click', () => {
+        delete groupStyles[groupName];
+        const tagEl = document.querySelector(`.filter-tag[data-group="${CSS.escape(groupName)}"]`);
+        if (tagEl) tagEl.style.backgroundColor = coloringMode === 'cluster'
+            ? clusterColorScale(groupName) : colorScale(groupName);
+        drawCanvas();
+        hideGroupStylePopup();
+    });
+    popup.querySelector('.gsp-close').addEventListener('click', hideGroupStylePopup);
+}
+
+// Close popup when clicking outside it (but not on another tag — that opens its own)
+document.addEventListener('click', (e) => {
+    if (!document.getElementById('group-style-popup')) return;
+    if (!e.target.closest('#group-style-popup') && !e.target.closest('.filter-tag')) {
+        hideGroupStylePopup();
+    }
+});
 
 function setupHighlightStyleControls() {
     const toggleBtn = document.getElementById('highlight-style-toggle');
