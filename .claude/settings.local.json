@@ -3,7 +3,8 @@
     "allow": [
       "Bash(git rm *)",
       "Bash(rm -rf semantic-map/.git)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(python3 -c ' *)"
     ],
     "additionalDirectories": [
       "/Users/hgorledeenn/Desktop/CJS/0126algorithms/hw-classification-story/semantic-map/.git"
