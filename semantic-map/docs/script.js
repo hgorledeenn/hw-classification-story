@@ -116,6 +116,7 @@ function getFilenameFromURL() {
 // Process data
 const parseDate = d3.timeParse("%Y-%m-%d");
 const formatDate = d3.timeFormat("%a %Y-%m-%d");
+const formatURLDate = d3.timeFormat("%Y-%m-%d"); // ISO format for URLs — reliably round-trips
 
 // Data loading functions
 async function loadData(url) {
@@ -212,10 +213,16 @@ function updateURL(searchTerm, startDate, endDate) {
         newParams.set('outputfile', outputfile);
     }
     
-    // Always set all filter parameters, even if empty
-    newParams.set('search', searchTerm || '');
-    newParams.set('start', startDate ? formatDate(startDate) : '');
-    newParams.set('end', endDate ? formatDate(endDate) : '');
+    if (searchTerm) newParams.set('search', searchTerm);
+
+    // Only encode dates when they narrow the full extent
+    if (allData) {
+        const [extentMin, extentMax] = d3.extent(allData, d => d.date);
+        if (startDate && !isNaN(startDate) && startDate > extentMin)
+            newParams.set('start', formatURLDate(startDate));
+        if (endDate && !isNaN(endDate) && endDate < extentMax)
+            newParams.set('end', formatURLDate(endDate));
+    }
 
     // Persist filter selections and coloring mode
     if (selectedSources.length > 0) newParams.set('sources', selectedSources.join(','));
@@ -229,10 +236,15 @@ function updateURL(searchTerm, startDate, endDate) {
 
 function readURLParams() {
     const params = new URLSearchParams(window.location.search);
+    const safeDate = s => {
+        if (!s) return null;
+        const d = parseDate(s); // expects YYYY-MM-DD
+        return (d instanceof Date && !isNaN(d.getTime())) ? d : null;
+    };
     return {
         searchTerm: params.get('search') || '',
-        start: params.get('start') ? new Date(params.get('start')) : null,
-        end: params.get('end') ? new Date(params.get('end')) : null,
+        start: safeDate(params.get('start')),
+        end: safeDate(params.get('end')),
         sources: params.get('sources') ? params.get('sources').split(',').filter(Boolean) : [],
         clusters: params.get('clusters') ? params.get('clusters').split(',').filter(Boolean) : [],
         coloring: params.get('coloring') || 'source',
@@ -1047,12 +1059,11 @@ try {
             
             window.addEventListener('resize', updatePlotSize);
 
-            // Clear URL if no meaningful parameters were set
+            // Clear URL if no meaningful filters are active
             const _p = new URLSearchParams(window.location.search);
-            if (!_p.get('search') && !_p.get('start') && !_p.get('end') &&
-                !_p.get('sources') && !_p.get('clusters') && !_p.get('coloring')) {
-                history.pushState(null, '', window.location.pathname);
-            }
+            const hasFilters = _p.get('search') || _p.get('start') || _p.get('end') ||
+                               _p.get('sources') || _p.get('clusters') || _p.get('coloring');
+            if (!hasFilters) history.pushState(null, '', window.location.pathname);
         });
 } catch (error) {
     loadingContainer.innerHTML = `
