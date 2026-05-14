@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Semantic Map 🍑[DRAFT]</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/14.6.3/nouislider.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/14.6.3/nouislider.min.js"></script>
+</head>
+<body>
+    <a href="https://github.com/dmil/numlock-nlp" class="github-ribbon">
+        <img src="https://github.blog/wp-content/uploads/2008/12/forkme_right_darkblue_121621.png?resize=149%2C149" 
+             alt="Fork me on GitHub" width="149" height="149">
+    </a>
+
+    <div id="loading-container">
+        <div class="loading-text">Loading data (this may take a few minutes)...</div>
+        <div class="progress-bar-container">
+            <div id="progress-bar"></div>
+        </div>
+        <div id="progress-text">0%</div>
+    </div>
+
+    <div id="main-container">
+        <h1>Semantic Map [DRAFT]</h1>
+        <p id="description">
+            This is a "semantic map" of sites in.
+        </p>
+        <div id="download-container">
+            <a href="#" id="download-link" class="download-btn" target="_blank">
+                📥 Download Raw Data
+            </a>
+        </div>
+        <div id="warning-box">
+            ⚠️ DO NOT PUBLISH OR SHARE.<br/>This is not for public consumption. Certain articles (such as those larger than the context window for openai embeddings) are missing and this has not been edited for public consumption yet. Also note that it may be slow to update and needs to be optimized, so you will have to be patient as it loads
+        </div>
+        <div id="controls-container">
+            <div id="search-container">
+                <input type="text" id="search-box" placeholder="Search">
+                <button id="search-button">Search</button>
+                <button id="reset-button">Reset</button>
+            </div>
+
+            <div id="dynamic-filters" class="filter-container"></div>
+
+            <div id="date-slider-container">
+                <div id="date-slider"></div>
+                <div id="playback-controls" style="text-align: center; margin-top: 10px;">
+                    <button id="step-backward-week" title="Step backward one week"> -1 Week </button>
+                    <button id="step-backward" title="Step backward one day"> -1 Day </button>
+                    <button id="play-pause" title="Play/Pause">▶</button>
+                    <button id="step-forward" title="Step forward one day"> +1 Day</button>
+                    <button id="step-forward-week" title="Step forward one week"> +1 Week </button>
+                </div>
+                <div id="date-range">
+                    <span id="start-date"></span> - <span id="end-date"></span>
+                </div>
+            </div>
+        </div>
+
+        <div id="source-select-container">
+            <div id="filter-combobox">
+                <div id="filter-tags"></div>
+                <input type="text" id="filter-input" placeholder="Filter by poet..." autocomplete="off">
+                <ul id="filter-dropdown"></ul>
+            </div>
+            <div id="color-by-container">
+                <span class="color-by-label">Color by:</span>
+                <div class="color-by-options">
+                    <label><input type="radio" name="color-by" value="source" checked> Source</label>
+                    <label><input type="radio" name="color-by" value="cluster"> Cluster</label>
+                </div>
+            </div>
+            <div id="dot-size-adjuster">
+                <span class="dot-size-label">Dot size:</span>
+                <div id="dot-size-slider"></div>
+                <span id="dot-size-value">1.0x</span>
+            </div>
+            <div id="highlight-style-container">
+                <button id="highlight-style-toggle" class="highlight-style-toggle">
+                    <span class="toggle-arrow">▶</span> Highlight Style
+                </button>
+                <div id="highlight-style-panel" style="display:none;">
+                    <div class="hs-row">
+                        <label class="hs-label">Color</label>
+                        <label class="hs-auto-label"><input type="checkbox" id="highlight-color-auto" checked> Auto</label>
+                        <input type="color" id="highlight-color-picker" value="#e41a1c" disabled>
+                    </div>
+                    <div class="hs-row">
+                        <label class="hs-label">Opacity</label>
+                        <input type="range" id="highlight-opacity-slider" class="hs-slider" min="0" max="100" value="70" step="1">
+                        <span id="highlight-opacity-value" class="hs-value">70%</span>
+                    </div>
+                    <div class="hs-row">
+                        <label class="hs-label">Size</label>
+                        <input type="range" id="highlight-size-slider" class="hs-slider" min="0.5" max="3.0" value="1.0" step="0.1">
+                        <span id="highlight-size-value" class="hs-value">1.0×</span>
+                    </div>
+                    <div class="hs-row">
+                        <label class="hs-label">Border</label>
+                        <label class="hs-auto-label"><input type="checkbox" id="highlight-border-enabled"> On</label>
+                        <input type="color" id="highlight-border-color" value="#000000" disabled>
+                        <input type="range" id="highlight-border-width-input" min="0.5" max="5" value="1" step="0.5" disabled style="flex:1; min-width:50px;">
+                        <span id="highlight-border-width-value" class="hs-value">1px</span>
+                    </div>
+                </div>
+            </div>
+            <div id="llm-overlay-container">
+                <label class="llm-toggle-label">
+                    <span class="llm-toggle-text">LLM Labels</span>
+                    <div class="llm-toggle-switch">
+                        <input type="checkbox" id="llm-overlay-toggle">
+                        <span class="llm-toggle-track"></span>
+                    </div>
+                </label>
+                <div id="llm-opacity-container" style="display:none;">
+                    <div id="llm-opacity-row">
+                        <span>Opacity:</span>
+                        <div id="llm-opacity-slider"></div>
+                        <span id="llm-opacity-value">60%</span>
+                    </div>
+                    <div id="llm-legend">
+                        <span class="llm-legend-item">
+                            <span class="llm-legend-dot llm-true-dot"></span> True
+                        </span>
+                        <span class="llm-legend-item">
+                            <span class="llm-legend-dot llm-false-dot"></span> False
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="content-container">
+            <div id="scatter-plot-wrapper">
+                <div id="scatter-plot"></div>
+                <div id="zoom-controls">
+                    <button id="zoom-in">+</button>
+                    <button id="zoom-out">-</button>
+                    <button id="zoom-reset">⟲</button>
+                </div>
+            </div>
+            <div id="info-box" class="info-box">
+                Hover over a point to see the details. Click to navigate to the article.
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>
+            This site was built by <a href="https://github.com/dmil">Dhrumil Mehta</a> with the help of 
+            <a href="https://openai.com/chatgpt" target="_blank" rel="noopener noreferrer">OpenAI's ChatGPT</a> and 
+            <a href="https://www.anthropic.com" target="_blank" rel="noopener noreferrer">Anthropic's Claude</a> 🤖
+        </p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

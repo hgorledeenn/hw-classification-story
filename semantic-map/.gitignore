@@ -1,0 +1,8 @@
+.env
+.DS_Store
+mediacloud_cache.sqlite
+memcache
+# exclude output except .keep
+output/*
+!output/.keep
+docs/*.csv
