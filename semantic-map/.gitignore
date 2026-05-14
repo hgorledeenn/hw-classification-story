@@ -6,3 +6,4 @@ memcache
 output/*
 !output/.keep
 docs/*.csv
+!docs/data.csv

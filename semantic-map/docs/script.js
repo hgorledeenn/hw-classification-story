@@ -109,8 +109,8 @@ function getFilenameFromURL() {
         return DEFAULT_FILE_PATH + filename;
     }
     
-    // Error if no parameter is provided
-    throw new Error('No file parameter provided. Please add ?filename=, ?localfile=, or ?outputfile= to the URL.');
+    // Default to bundled public data when no parameter is provided
+    return 'data.csv';
 }
 
 // Process data
