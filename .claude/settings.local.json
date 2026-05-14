@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git rm *)",
+      "Bash(rm -rf semantic-map/.git)",
+      "Bash(git add *)"
+    ],
+    "additionalDirectories": [
+      "/Users/hgorledeenn/Desktop/CJS/0126algorithms/hw-classification-story/semantic-map/.git"
+    ]
+  }
+}
