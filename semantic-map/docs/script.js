@@ -1205,9 +1205,7 @@ try {
             setupDotSizeControls();
             setupLLMOverlayControls();
 
-            // Initial update (must happen before highlight controls so xScale has a range)
             updatePlotSize();
-            setupHighlightStyleControls();
             
             window.addEventListener('resize', updatePlotSize);
 

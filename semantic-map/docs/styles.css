@@ -23,8 +23,20 @@ h1 {
     font-size: 1.1em;
     color: #666;
     max-width: 800px;
-    margin: 0 auto 30px;
+    margin: 0 auto 10px;
     line-height: 1.4;
+}
+
+#how-to {
+    max-width: 800px;
+    margin: 0 auto 20px;
+    font-size: 0.88em;
+    color: #777;
+    line-height: 1.5;
+    background: #f9f9f9;
+    border-left: 3px solid #ddd;
+    padding: 8px 14px;
+    border-radius: 0 4px 4px 0;
 }
 
 #description a {

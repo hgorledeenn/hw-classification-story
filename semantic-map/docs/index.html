@@ -28,6 +28,13 @@
         <p id="description">
             This is a "semantic map" of sites in.
         </p>
+        <div id="how-to">
+            Each dot is a poem, positioned so that thematically similar poems cluster together.
+            <strong>Search</strong> by title, poet, or keyword to highlight matching poems.
+            <strong>Filter by poet or cluster</strong> using the dropdown — then <strong>click any tag bubble</strong> to customize that group's dot color, size, and border.
+            Switch between coloring by poet or thematic cluster with the <em>Color by</em> radio buttons.
+            Hover a dot to see details; click it to open the poem. Zoom with scroll or the +/− buttons. Links are shareable — filters are saved in the URL.
+        </div>
         <div id="download-container">
             <a href="#" id="download-link" class="download-btn" target="_blank">
                 📥 Download Raw Data
@@ -78,35 +85,7 @@
                 <div id="dot-size-slider"></div>
                 <span id="dot-size-value">1.0x</span>
             </div>
-            <div id="highlight-style-container">
-                <button id="highlight-style-toggle" class="highlight-style-toggle">
-                    <span class="toggle-arrow">▶</span> Highlight Style
-                </button>
-                <div id="highlight-style-panel" style="display:none;">
-                    <div class="hs-row">
-                        <label class="hs-label">Color</label>
-                        <label class="hs-auto-label"><input type="checkbox" id="highlight-color-auto" checked> Auto</label>
-                        <input type="color" id="highlight-color-picker" value="#e41a1c" disabled>
-                    </div>
-                    <div class="hs-row">
-                        <label class="hs-label">Opacity</label>
-                        <input type="range" id="highlight-opacity-slider" class="hs-slider" min="0" max="100" value="70" step="1">
-                        <span id="highlight-opacity-value" class="hs-value">70%</span>
-                    </div>
-                    <div class="hs-row">
-                        <label class="hs-label">Size</label>
-                        <input type="range" id="highlight-size-slider" class="hs-slider" min="0.5" max="3.0" value="1.0" step="0.1">
-                        <span id="highlight-size-value" class="hs-value">1.0×</span>
-                    </div>
-                    <div class="hs-row">
-                        <label class="hs-label">Border</label>
-                        <label class="hs-auto-label"><input type="checkbox" id="highlight-border-enabled"> On</label>
-                        <input type="color" id="highlight-border-color" value="#000000" disabled>
-                        <input type="range" id="highlight-border-width-input" min="0.5" max="5" value="1" step="0.5" disabled style="flex:1; min-width:50px;">
-                        <span id="highlight-border-width-value" class="hs-value">1px</span>
-                    </div>
-                </div>
-            </div>
+
             <div id="llm-overlay-container">
                 <label class="llm-toggle-label">
                     <span class="llm-toggle-text">LLM Labels</span>
