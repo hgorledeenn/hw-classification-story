@@ -1113,7 +1113,7 @@ try {
         .then(data => {
                         
             const downloadLink = document.getElementById('download-link');
-            downloadLink.href = dataUrl;
+            if (downloadLink) downloadLink.href = dataUrl;
             setupCanvas();
             updateDescription();
 
