@@ -4,7 +4,12 @@
       "Bash(git rm *)",
       "Bash(rm -rf semantic-map/.git)",
       "Bash(git add *)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://hgorledeenn.github.io/hw-classification-story/semantic-map/docs/data.csv\")",
+      "Bash(curl -s \"https://hgorledeenn.github.io/hw-classification-story/semantic-map/docs/data.csv\")",
+      "Bash(git lfs *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ],
     "additionalDirectories": [
       "/Users/hgorledeenn/Desktop/CJS/0126algorithms/hw-classification-story/semantic-map/.git"
